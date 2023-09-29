@@ -145,3 +145,21 @@ Feature: Get validation errors
     And I ask if there are errors
     Then there should be 1 error
     And that error should have the type "line_breaks"
+
+  Scenario: CRLF line breaks inside quotes with CRLF line endings causes no error
+    Given I have a CSV file called "quoted-crlf-linebrks-crlf-line-endings.csv"
+    And it is stored at the url "http://example.com/example1.csv"
+    And I ask if there are errors
+    Then there should be 0 error
+
+  Scenario: LF line breaks inside quotes with CRLF line endings causes no error
+    Given I have a CSV file called "quoted-lf-linebrks-crlf-line-endings.csv"
+    And it is stored at the url "http://example.com/example1.csv"
+    And I ask if there are errors
+    Then there should be 0 error
+
+  Scenario: CR line breaks inside quotes with CRLF line endings causes no error
+    Given I have a CSV file called "quoted-cr-linebrks-crlf-line-endings.csv"
+    And it is stored at the url "http://example.com/example1.csv"
+    And I ask if there are errors
+    Then there should be 0 error

@@ -183,7 +183,26 @@ module Csvlint
 
       @csv_options[:encoding] = @encoding
 
+      # From CSV.parse_line(stream, **@csv_options), called via inheritance by
+      #   LineCSV.parse_line(stream, **lineopts)
+      #
+      # line = "Short,Multi,Bool\r\n"
+      # options = {:col_sep=>",", :row_sep=>:auto, :quote_char=>"\"",
+      #   :skip_blanks=>false, :encoding=>"UTF-8"}
+      # new(line, **options) = #<Csvlint::Validator::LineCSV io_type:StringIO
+      #   encoding:UTF-8 lineno:0 col_sep:"," row_sep:"\r\n" quote_char:"\"">
+      #
+      # line = "a,\"b\nc\",0\r\n"
+      # options = {:col_sep=>",", :row_sep=>:auto, :quote_char=>"\"",
+      #   :skip_blanks=>false, :encoding=>"UTF-8"}
+      # new(line, **options) = #<Csvlint::Validator::LineCSV io_type:StringIO
+      #   encoding:UTF-8 lineno:0 col_sep:"," row_sep:"\n" quote_char:"\"">
+      #
+      # So, what is setting row_sep incorrectly to "\n" when that character
+      #   appears in quotes, but not at the end of the line?
       begin
+        # lineopts = csv_options_for_line(stream)
+        # row = LineCSV.parse_line(stream, **lineopts)
         row = LineCSV.parse_line(stream, **@csv_options)
       rescue LineCSV::MalformedCSVError => e
         build_exception_messages(e, stream, current_line) unless e.message.include?("UTF") && @reported_invalid_encoding
@@ -213,6 +232,20 @@ module Csvlint
       end
       @data << row
     end
+
+    # def csv_options_for_line(line)
+    #   # If a specific row_sep has been explicitly specified, don't mess with it
+    #   return @csv_options unless @csv_options[:row_sep] == :auto
+
+    #   # CSV.parse_line does not seem to know how to auto-determine row_sep
+    #   #   from the single line it is given, and throws a MalformedCSVError if
+    #   #   \r\n or \r is present at the end of the line.
+    #   if line.end_with?("\r\n")
+    #     @csv_options.merge({row_sep: "\r\n"})
+    #   else
+    #     @csv_options.merge({row_sep: line[-1, 1]})
+    #   end
+    # end
 
     def finish
       sum = @col_counts.inject(:+)
