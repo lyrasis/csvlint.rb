@@ -154,7 +154,8 @@ module Csvlint
           @current_line += 1
         end
       else
-        # If it's not a full line, then prepare to add it to the beginning of the next chunk
+        # If it's not a full line, then prepare to add it to the beginning of
+        #   the next chunk
         @leading = line
       end
     rescue ArgumentError => ae
