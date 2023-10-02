@@ -217,7 +217,7 @@ module Csvlint
     end
 
     def csv_options_for_line(line)
-      # If a specific row_sep has been explicitly specified, don't mess with it
+      # If a specific row_sep has been explicitly specified, don't mess with it.
       return @csv_options unless @csv_options[:row_sep] == :auto
 
       if line.end_with?("\r\n")

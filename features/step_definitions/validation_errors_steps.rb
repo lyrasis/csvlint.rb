@@ -86,5 +86,8 @@ Given(/^I have a CSV that doesn't exist$/) do
 end
 
 Then(/^there should be no "(.*?)" errors$/) do |type|
-  @errors.each { |error| error.type.should_not == type.to_sym }
+  @errors.each { |error|
+    error.type.should_not
+    type.to_sym
+  }
 end
