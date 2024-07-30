@@ -185,7 +185,8 @@ module Csvlint
       @csv_options[:encoding] = @encoding
 
       begin
-        row = LineCSV.parse_line(stream, **@csv_options)
+        lineopts = csv_options_for_line(stream)
+        row = LineCSV.parse_line(stream, **lineopts)
       rescue LineCSV::MalformedCSVError => e
         build_exception_messages(e, stream, current_line) unless e.message.include?("UTF") && @reported_invalid_encoding
       end
@@ -213,6 +214,19 @@ module Csvlint
         end
       end
       @data << row
+    end
+
+    def csv_options_for_line(line)
+      # If a specific row_sep has been explicitly specified, don't mess with it.
+      return @csv_options unless @csv_options[:row_sep] == :auto
+
+      if line.end_with?("\r\n")
+        @csv_options.merge({row_sep: "\r\n"})
+      elsif ["\r", "\n"].include?(line[-1, 1])
+        @csv_options.merge({row_sep: line[-1, 1]})
+      else
+        @csv_options
+      end
     end
 
     def finish
