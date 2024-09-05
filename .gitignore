@@ -29,3 +29,4 @@ csvlint-earl.ttl
 .byebug_history
 
 gemfiles/*.lock
+/util/csv_testing.csv
