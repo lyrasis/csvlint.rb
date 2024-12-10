@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require 'bundler/inline'
+require "bundler/inline"
 
 gemfile(true) do
-  source 'https://rubygems.org'
-  gem 'csv'
-  gem 'csvlint', path: '../'
-  gem 'pry'
+  source "https://rubygems.org"
+  gem "csv"
+  gem "csvlint", path: "../"
+  gem "pry"
 end
 
 module Ct
@@ -15,9 +15,9 @@ module Ct
 
   class Test
     EOL_MAP = {
-      "\r" => 'CR',
-      "\n" => 'LF',
-      "\r\n" => 'CRLF'
+      "\r" => "CR",
+      "\n" => "LF",
+      "\r\n" => "CRLF"
     }
 
     def initialize(main_eol, test_eol, loc)
@@ -28,6 +28,7 @@ module Ct
     end
 
     def csv_parse = @csv_parse ||= run_csv_parse
+
     def lint = @lint ||= run_lint
 
     def row_count
@@ -52,41 +53,41 @@ module Ct
 
     def set_csv
       case loc
-      when 'final row ending'
+      when "final row ending"
         "obj,note#{main_eol}val,val#{main_eol}val,val#{test_eol}"
-      when 'extra blank row at end'
+      when "extra blank row at end"
         "obj,note#{main_eol}val,val#{main_eol}val,val#{main_eol}#{test_eol}"
-      when 'blank row between populated rows'
+      when "blank row between populated rows"
         "obj,note#{main_eol}val,val#{main_eol}#{test_eol}val,val#{main_eol}"
       end
     end
 
     def run_csv_parse
-      CSV.parse(csv, headers: true, nil_value: '')
-    rescue StandardError => e
+      CSV.parse(csv, headers: true, nil_value: "")
+    rescue => e
       "#{e.class}: #{e.message}"
     else
-      'success'
+      "success"
     end
 
     def run_lint
       @v = Csvlint::Validator.new(StringIO.new(csv))
-    rescue StandardError => e
+    rescue => e
       @v = nil
       "VALIDATION ERROR: #{e}"
     else
-      return 'valid' if @v.errors.empty?
+      return "valid" if @v.errors.empty?
 
-      @v.errors.map(&:type).join('; ')
+      @v.errors.map(&:type).join("; ")
     end
   end
 
   module_function
 
   def base_test_configs(main, test)
-    ['final row ending',
-     'extra blank row at end',
-     'blank row between populated rows'].map do |loc|
+    ["final row ending",
+      "extra blank row at end",
+      "blank row between populated rows"].map do |loc|
       Test.new(main, test, loc)
     end
   end
@@ -106,12 +107,12 @@ module Ct
   end
 
   tr = perms.map { |pair| base_test_configs(*pair) }
-            .flatten
-            .map(&:result)
+    .flatten
+    .map(&:result)
 
   headers = tr[0].keys
 
-  CSV.open('csv_testing.csv', 'w', write_headers: true, headers: headers) do |csv|
+  CSV.open("csv_testing.csv", "w", write_headers: true, headers: headers) do |csv|
     tr.each do |result|
       csv << result.values_at(*headers)
     end
