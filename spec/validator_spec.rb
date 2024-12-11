@@ -9,7 +9,8 @@ describe Csvlint::Validator do
   end
 
   it "should validate from a URL" do
-    stub_request(:get, "http://example.com/example.csv").to_return(status: 200, headers: {"Content-Type" => "text/csv"}, body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
+    stub_request(:get, "http://example.com/example.csv").to_return(status: 200,
+      headers: {"Content-Type" => "text/csv"}, body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
     validator = Csvlint::Validator.new("http://example.com/example.csv")
 
     expect(validator.valid?).to eql(true)
@@ -19,7 +20,8 @@ describe Csvlint::Validator do
   end
 
   it "should validate from a file path" do
-    validator = Csvlint::Validator.new(File.new(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
+    validator = Csvlint::Validator.new(File.new(File.join(File.dirname(__FILE__), "..", "features", "fixtures",
+      "valid.csv")))
 
     expect(validator.valid?).to eql(true)
     expect(validator.instance_variable_get(:@expected_columns)).to eql(3)
@@ -28,7 +30,8 @@ describe Csvlint::Validator do
   end
 
   it "should validate from a file path including whitespace" do
-    validator = Csvlint::Validator.new(File.new(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "white space in filename.csv")))
+    validator = Csvlint::Validator.new(File.new(File.join(File.dirname(__FILE__), "..", "features", "fixtures",
+      "white space in filename.csv")))
 
     expect(validator.valid?).to eql(true)
   end
@@ -40,7 +43,7 @@ describe Csvlint::Validator do
   end
 
   context "validation with multiple lines: " do
-    # TODO multiple lines permits testing of warnings
+    # TODO: multiple lines permits testing of warnings
     # TODO need more assertions in each test IE @formats
     # TODO the phrasing of col_counts if only consulting specs might be confusing
     # TODO ^-> col_counts and data.size should be equivalent, but only data is populated outside of if row.nil?
@@ -53,7 +56,7 @@ describe Csvlint::Validator do
       validator = Csvlint::Validator.new(data)
 
       expect(validator.valid?).to eql(true)
-      # TODO would be beneficial to know how formats functions WRT to headers - check_format.feature:17 returns 3 rows total
+      # TODO: would be beneficial to know how formats functions WRT to headers - check_format.feature:17 returns 3 rows total
       # TODO in its formats object but is provided with 5 rows (with one nil row) [uses validation_warnings_steps.rb]
       expect(validator.instance_variable_get(:@expected_columns)).to eql(3)
       expect(validator.instance_variable_get(:@col_counts).count).to eql(4)
@@ -221,7 +224,7 @@ describe Csvlint::Validator do
       expect(validator.errors.first.type).to eql(:unclosed_quote)
     end
 
-    # TODO stray quotes is not covered in any spec in this library
+    # TODO: stray quotes is not covered in any spec in this library
     # it "checks for stray quotes" do
     #   stream = "\"a\",“b“,\"c\"" "\r\n"
     #   validator = Csvlint::Validator.new(stream)
@@ -241,7 +244,7 @@ describe Csvlint::Validator do
     end
 
     it "returns line break errors if incorrectly specified" do
-      # TODO the logic for catching this error message is very esoteric
+      # TODO: the logic for catching this error message is very esoteric
       stream = "\"a\",\"b\",\"c\"\n"
       validator = Csvlint::Validator.new(StringIO.new(stream), {"lineTerminator" => "\r\n"})
       expect(validator.valid?).to eql(false)
@@ -255,7 +258,7 @@ describe Csvlint::Validator do
       data = StringIO.new("minimum, minimum")
       validator = Csvlint::Validator.new(data)
       validator.reset
-      expect(validator.validate_header(["minimum", "minimum"])).to eql(true)
+      expect(validator.validate_header(%w[minimum minimum])).to eql(true)
       expect(validator.warnings.size).to eql(1)
       expect(validator.warnings.first.type).to eql(:duplicate_column_name)
       expect(validator.warnings.first.category).to eql(:schema)
@@ -338,7 +341,7 @@ describe Csvlint::Validator do
 
       validator = Csvlint::Validator.new("http://example.com/example.csv")
 
-      rows.each_with_index do |row, i|
+      rows.each_with_index do |row, _i|
         validator.build_formats(row)
       end
 
@@ -354,7 +357,7 @@ describe Csvlint::Validator do
 
       validator = Csvlint::Validator.new("http://example.com/example.csv")
 
-      rows.each_with_index do |row, i|
+      rows.each_with_index do |row, _i|
         validator.build_formats(row)
       end
 
@@ -415,7 +418,7 @@ describe Csvlint::Validator do
     end
   end
 
-  # TODO the below tests are all the remaining tests from validator_spec.rb, annotations indicate their status HOWEVER these tests may be best refactored into client specs
+  # TODO: the below tests are all the remaining tests from validator_spec.rb, annotations indicate their status HOWEVER these tests may be best refactored into client specs
   context "when detecting headers" do
     it "should default to expecting a header" do
       validator = Csvlint::Validator.new("http://example.com/example.csv")
@@ -436,21 +439,24 @@ describe Csvlint::Validator do
     end
 
     it "should look in content-type for header=absent" do
-      stub_request(:get, "http://example.com/example.csv").to_return(status: 200, headers: {"Content-Type" => "text/csv; header=absent"}, body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
+      stub_request(:get, "http://example.com/example.csv").to_return(status: 200,
+        headers: {"Content-Type" => "text/csv; header=absent"}, body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
       validator = Csvlint::Validator.new("http://example.com/example.csv")
       expect(validator.header?).to eql(false)
       expect(validator.errors.size).to eql(0)
     end
 
     it "should look in content-type for header=present" do
-      stub_request(:get, "http://example.com/example.csv").to_return(status: 200, headers: {"Content-Type" => "text/csv; header=present"}, body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
+      stub_request(:get, "http://example.com/example.csv").to_return(status: 200,
+        headers: {"Content-Type" => "text/csv; header=present"}, body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
       validator = Csvlint::Validator.new("http://example.com/example.csv")
       expect(validator.header?).to eql(true)
       expect(validator.errors.size).to eql(0)
     end
 
     it "assume header present if not specified in content type" do
-      stub_request(:get, "http://example.com/example.csv").to_return(status: 200, headers: {"Content-Type" => "text/csv"}, body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
+      stub_request(:get, "http://example.com/example.csv").to_return(status: 200,
+        headers: {"Content-Type" => "text/csv"}, body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
       validator = Csvlint::Validator.new("http://example.com/example.csv")
       expect(validator.header?).to eql(true)
       expect(validator.errors.size).to eql(0)
@@ -459,7 +465,8 @@ describe Csvlint::Validator do
     end
 
     it "give wrong content type error if content type is wrong" do
-      stub_request(:get, "http://example.com/example.csv").to_return(status: 200, headers: {"Content-Type" => "text/html"}, body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
+      stub_request(:get, "http://example.com/example.csv").to_return(status: 200,
+        headers: {"Content-Type" => "text/html"}, body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
       validator = Csvlint::Validator.new("http://example.com/example.csv")
       expect(validator.header?).to eql(true)
       expect(validator.errors.size).to eql(1)
@@ -504,22 +511,26 @@ describe Csvlint::Validator do
     end
 
     it "should not be an error if we have assumed a header, there is no dialect and content-type doesn't declare header, as we assume header=present" do
-      stub_request(:get, "http://example.com/example.csv").to_return(status: 200, headers: {"Content-Type" => "text/csv"}, body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
+      stub_request(:get, "http://example.com/example.csv").to_return(status: 200,
+        headers: {"Content-Type" => "text/csv"}, body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
       validator = Csvlint::Validator.new("http://example.com/example.csv")
       expect(validator.valid?).to eql(true)
     end
 
     it "should be valid if we have a dialect and the data is from the web" do
-      stub_request(:get, "http://example.com/example.csv").to_return(status: 200, headers: {"Content-Type" => "text/csv"}, body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
+      stub_request(:get, "http://example.com/example.csv").to_return(status: 200,
+        headers: {"Content-Type" => "text/csv"}, body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
       # header defaults to true in csv dialect, so this is valid
       validator = Csvlint::Validator.new("http://example.com/example.csv", {})
       expect(validator.valid?).to eql(true)
 
-      stub_request(:get, "http://example.com/example.csv").to_return(status: 200, headers: {"Content-Type" => "text/csv"}, body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
+      stub_request(:get, "http://example.com/example.csv").to_return(status: 200,
+        headers: {"Content-Type" => "text/csv"}, body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
       validator = Csvlint::Validator.new("http://example.com/example.csv", {"header" => true})
       expect(validator.valid?).to eql(true)
 
-      stub_request(:get, "http://example.com/example.csv").to_return(status: 200, headers: {"Content-Type" => "text/csv"}, body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
+      stub_request(:get, "http://example.com/example.csv").to_return(status: 200,
+        headers: {"Content-Type" => "text/csv"}, body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
       validator = Csvlint::Validator.new("http://example.com/example.csv", {"header" => false})
       expect(validator.valid?).to eql(true)
     end
@@ -527,7 +538,10 @@ describe Csvlint::Validator do
 
   context "accessing metadata" do
     before :all do
-      stub_request(:get, "http://example.com/crlf.csv").to_return(status: 200, body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "windows-line-endings.csv")))
+      stub_request(:get, "http://example.com/crlf.csv").to_return(status: 200,
+        body: File.read(File.join(
+          File.dirname(__FILE__), "..", "features", "fixtures", "windows-line-endings.csv"
+        )))
       stub_request(:get, "http://example.com/crlf.csv-metadata.json").to_return(status: 404)
     end
 
@@ -540,20 +554,24 @@ describe Csvlint::Validator do
   it "should give access to the complete CSV data file" do
     stub_request(:get, "http://example.com/example.csv").to_return(status: 200,
       headers: {"Content-Type" => "text/csv; header=present"},
-      body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
+      body: File.read(File.join(
+        File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv"
+      )))
     validator = Csvlint::Validator.new("http://example.com/example.csv")
     expect(validator.valid?).to eql(true)
     data = validator.data
 
     expect(data.count).to eql 3
-    expect(data[0]).to eql ["Foo", "Bar", "Baz"]
-    expect(data[2]).to eql ["3", "2", "1"]
+    expect(data[0]).to eql %w[Foo Bar Baz]
+    expect(data[2]).to eql %w[3 2 1]
   end
 
   it "should count the total number of rows read" do
     stub_request(:get, "http://example.com/example.csv").to_return(status: 200,
       headers: {"Content-Type" => "text/csv; header=present"},
-      body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
+      body: File.read(File.join(
+        File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv"
+      )))
     validator = Csvlint::Validator.new("http://example.com/example.csv")
     expect(validator.row_count).to eq(3)
   end
@@ -561,12 +579,14 @@ describe Csvlint::Validator do
   it "should limit number of lines read" do
     stub_request(:get, "http://example.com/example.csv").to_return(status: 200,
       headers: {"Content-Type" => "text/csv; header=present"},
-      body: File.read(File.join(File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv")))
+      body: File.read(File.join(
+        File.dirname(__FILE__), "..", "features", "fixtures", "valid.csv"
+      )))
     validator = Csvlint::Validator.new("http://example.com/example.csv", {}, nil, limit_lines: 2)
     expect(validator.valid?).to eql(true)
     data = validator.data
     expect(data.count).to eql 2
-    expect(data[0]).to eql ["Foo", "Bar", "Baz"]
+    expect(data[0]).to eql %w[Foo Bar Baz]
   end
 
   context "with a lambda" do
