@@ -58,7 +58,10 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-          ruby-version: "3.3"
+          # Setting this later than 3.1 requires use of anonymous positional
+          #  arguments forwarding, which breaks all versions earlier than 3.2
+          #  in our test matrix
+          ruby-version: "3.1"
       - name: Install dependencies
         run: bundle install
       - name: Run the tests
