@@ -608,6 +608,64 @@ describe Csvlint::Validator do
     end
   end
 
+  describe "#row_count" do
+    let(:validator) { Csvlint::Validator.new(StringIO.new(csv), opts) }
+    let(:opts) { {} }
+    let(:result) { validator.row_count }
+
+    context 'with \r\n line terminators and final EOL' do
+      let(:csv) do
+        %("Foo","Bar","Baz"\r\n"1","2","3"\r\n"3","2","1"\r\n)
+      end
+
+      it "should count the total number of rows read" do
+        expect(validator.row_count).to eq(3)
+      end
+    end
+
+    context 'with \r\n line terminators and without final EOL' do
+      let(:csv) do
+        %("Foo","Bar","Baz"\r\n"1","2","3"\r\n"3","2","1")
+      end
+
+      it "should count the total number of rows read" do
+        expect(validator.row_count).to eq(3)
+      end
+    end
+
+    context 'with \n line terminators and final EOL' do
+      let(:csv) do
+        %("Foo","Bar","Baz"\n"1","2","3"\n"3","2","1"\n)
+      end
+
+      it "should count the total number of rows read" do
+        expect(validator.row_count).to eq(3)
+      end
+    end
+
+    context 'with \r line terminators and final EOL' do
+      let(:csv) do
+        %("Foo","Bar","Baz"\r"1","2","3"\r"3","2","1"\r)
+      end
+
+      it "should count the total number of rows read" do
+        expect(validator.row_count).to eq(3)
+      end
+    end
+
+    context 'with \r line terminators and final EOL and lineTerminator ' \
+      "specified" do
+      let(:csv) do
+        %("Foo","Bar","Baz"\r"1","2","3"\r"3","2","1"\r)
+      end
+      let(:opts) { {"lineTerminator" => "\r"} }
+
+      it "should count the total number of rows read" do
+        expect(validator.row_count).to eq(3)
+      end
+    end
+  end
+
   # Commented out because there is currently no way to mock redirects with Typhoeus and WebMock - see https://github.com/bblimke/webmock/issues/237
   # it "should follow redirects to SSL" do
   #   stub_request(:get, "http://example.com/redirect").to_return(:status => 301, :headers=>{"Location" => "https://example.com/example.csv"})
