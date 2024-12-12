@@ -67,6 +67,7 @@ module Csvlint
       @formats = []
       @schema = schema
       @dialect = dialect
+      @orig_sep = $/
       @csv_header = true
       @headers = {}
       @lambda = options[:lambda]
@@ -107,10 +108,17 @@ module Csvlint
 
     def validate_stream
       @current_line = 1
+      # StringIO.each_line splits on the value of $/ (input record separator),
+      #   which defaults to \n. This is why CSVs with \r EOL character don't get
+      #   lines counted properly?
+      set_sep(@source)
+
       @source.each_line do |line|
         break if line_limit_reached?
         parse_line(line)
       end
+
+      reset_sep
       validate_line(@leading, @current_line) unless @leading == ""
     end
 
@@ -131,10 +139,13 @@ module Csvlint
       request.on_body do |chunk|
         chunk.force_encoding(Encoding::UTF_8) if chunk.encoding == Encoding::ASCII_8BIT
         io = StringIO.new(chunk)
+        set_sep(io)
+
         io.each_line do |line|
           break if line_limit_reached?
           parse_line(line)
         end
+        reset_sep
       end
       request.run
       # Validate the last line too
@@ -144,7 +155,7 @@ module Csvlint
     def parse_line(line)
       line = @leading + line
       # Check if the last line is a line break - in which case it's a full line
-      if line[-1, 1].include?("\n")
+      if ["\n", "\r"].include?(line[-1, 1])
         # If the number of quotes is odd, the linebreak is inside some quotes
         if line.count(@dialect["quoteChar"]).odd?
           @leading = line
@@ -304,7 +315,7 @@ module Csvlint
     end
 
     def report_line_breaks(line_no = nil)
-      return unless @input[-1, 1].include?("\n") # Return straight away if there's no newline character - i.e. we're on the last line
+      return unless ["\r", "\n"].include?(@input[-1, 1]) # Return straight away if there's no newline character - i.e. we're on the last line
       line_break = get_line_break(@input)
       @line_breaks << line_break
       unless line_breaks_reported?
@@ -518,6 +529,43 @@ module Csvlint
 
     private
 
+    def set_sep(source)
+      $/ = determine_sep(source)
+    end
+
+    def determine_sep(source)
+      return explicitly_set_sep if explicitly_set_sep
+
+      src_str = case source
+      when File
+        File.read(source.path)
+      when IO
+        source.read
+      when StringIO
+        source.string
+      when Tempfile
+        source.read
+      else
+        raise "Unhandled source class: #{source.class}"
+      end
+      src_str.include?("\n") ? "\n" : "\r"
+    end
+
+    def explicitly_set_sep
+      return unless @dialect
+      return unless @dialect.key?("lineTerminator")
+
+      sep = @dialect["lineTerminator"]
+      return unless sep.is_a?(String)
+      return if sep.empty?
+
+      sep
+    end
+
+    def reset_sep
+      $/ = @orig_sep
+    end
+
     def parse_extension(source)
       case source
       when File
@@ -589,11 +637,12 @@ module Csvlint
     end
 
     def get_line_break(line)
-      eol = line.chars.last(2)
-      if eol.first == "\r"
-        "\r\n"
+      eol = line.chars.last(2).join
+      case eol
+      when "\r\n"
+        eol
       else
-        "\n"
+        eol[-1]
       end
     end
 
