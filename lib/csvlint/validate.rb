@@ -67,7 +67,6 @@ module Csvlint
       @formats = []
       @schema = schema
       @dialect = dialect
-      @orig_sep = $/
       @csv_header = true
       @headers = {}
       @lambda = options[:lambda]
@@ -108,17 +107,7 @@ module Csvlint
 
     def validate_stream
       @current_line = 1
-      # StringIO.each_line splits on the value of $/ (input record separator),
-      #   which defaults to \n. This is why CSVs with \r EOL character don't get
-      #   lines counted properly?
-      set_sep(@source)
-
-      @source.each_line do |line|
-        break if line_limit_reached?
-        parse_line(line)
-      end
-
-      reset_sep
+      parse_lines(@source)
       validate_line(@leading, @current_line) unless @leading == ""
     end
 
@@ -139,17 +128,30 @@ module Csvlint
       request.on_body do |chunk|
         chunk.force_encoding(Encoding::UTF_8) if chunk.encoding == Encoding::ASCII_8BIT
         io = StringIO.new(chunk)
-        set_sep(io)
-
-        io.each_line do |line|
-          break if line_limit_reached?
-          parse_line(line)
-        end
-        reset_sep
+        parse_lines(io)
       end
       request.run
       # Validate the last line too
       validate_line(@leading, @current_line) unless @leading == ""
+    end
+
+    # #each_line splits on the value of $/ (input record separator),
+    #   which defaults to \n. This is why CSVs with \r EOL character don't get
+    #   lines counted properly?
+    def parse_lines(source)
+      sep = determine_sep(source)
+
+      if sep == "\n"
+        source.each_line do |line|
+          break if line_limit_reached?
+          parse_line(line)
+        end
+      else
+        source.each_line(sep) do |line|
+          break if line_limit_reached?
+          parse_line(line)
+        end
+      end
     end
 
     def parse_line(line)
@@ -529,10 +531,6 @@ module Csvlint
 
     private
 
-    def set_sep(source)
-      $/ = determine_sep(source)
-    end
-
     def determine_sep(source)
       return explicitly_set_sep if explicitly_set_sep
 
@@ -560,10 +558,6 @@ module Csvlint
       return if sep.empty?
 
       sep
-    end
-
-    def reset_sep
-      $/ = @orig_sep
     end
 
     def parse_extension(source)
