@@ -17,7 +17,7 @@ A ruby gem to support validating CSV files to check their syntax and contents. Y
 
 ## Development
 
-`ruby version 3.4`
+`ruby version 4.0`
 
 ### Tests
 
